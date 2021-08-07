@@ -24,26 +24,10 @@ void ConfigureScene() {
     Vector3 sp2Cnt = { 2, 0, 4 };
     Vector3 sp3Cnt = { -2, 0, 4 };
 
-    Sphere sp1 = { sp1Cnt, 1, RGB(255, 0, 0) };
-    Sphere sp2 = { sp2Cnt, 1, RGB(0, 0, 255) };
-    Sphere sp3 = { sp3Cnt, 1, RGB(0, 255, 0) };
-    /*Sphere* sp1 = (Sphere*)malloc(sizeof(Sphere));
-    Sphere* sp2 = (Sphere*)malloc(sizeof(Sphere));
-    Sphere* sp3 = (Sphere*)malloc(sizeof(Sphere));
-
-    sp1->cnt = sp1Cnt;
-    sp1->radius = 1;
-    sp1->clr = RGB(255, 0, 0);
+    Sphere sp1 = { sp1Cnt, 1, RT_RGB(255, 0, 0) };
+    Sphere sp2 = { sp2Cnt, 1, RT_RGB(0, 0, 255) };
+    Sphere sp3 = { sp3Cnt, 1, RT_RGB(0, 255, 0) };
     
-    sp2->cnt = sp2Cnt;
-    sp2->radius = 1;
-    sp2->clr = RGB(0, 0, 255);
-
-    sp3->cnt = sp3Cnt;
-    sp3->radius = 1;
-    sp3->clr = RGB(0, 255, 0);*/
-
-    //Sphere spheres[3] = { sp1, sp2, sp3 };
     Sphere* spheres = (Sphere*)malloc(sizeof(Sphere) * 3);
     spheres[0] = sp1;
     spheres[1] = sp2;

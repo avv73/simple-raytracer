@@ -2,7 +2,6 @@
 
 #include <windows.h>
 #include <math.h>
-#include <stdio.h>
 
 #define FLT_MAX          3.402823466e+38F        // max value of float
 
@@ -12,6 +11,8 @@ int RT_WINDOW_HEIGHT;
 COLORREF* frmBuffer = NULL;
 
 void Draw();
+
+void Update(HWND wndHandle);
 
 // Initializes the raytracer and renders the scene provided.
 
@@ -25,9 +26,15 @@ void StartRaytracer(HWND wndHandle, int wWidth, int wHeight) {
 
     Draw();
 
+    Update(wndHandle);
+}
+
+// Updates window handle DC with bitmap of framebuffer
+
+void Update(HWND wndHandle) {
     HDC wndDc = GetDC(wndHandle);
 
-    HBITMAP map = CreateBitmap(wWidth, wHeight, 1, 8 * 4, (void*)frmBuffer);
+    HBITMAP map = CreateBitmap(RT_WINDOW_WIDTH, RT_WINDOW_HEIGHT, 1, 8 * 4, (void*)frmBuffer);
 
     HDC src = CreateCompatibleDC(wndDc);
     SelectObject(src, map);
@@ -35,14 +42,15 @@ void StartRaytracer(HWND wndHandle, int wWidth, int wHeight) {
     BitBlt(wndDc,
         0,
         0,
-        wWidth,
-        wHeight,
+        RT_WINDOW_WIDTH,
+        RT_WINDOW_HEIGHT,
         src,
         0,
         0,
         SRCCOPY);
 
     DeleteDC(src);
+    DeleteObject(map); // for now?
 }
 
 // Puts pixel on the screen, converts from canvas coordinate system to screen coordinate system itself.
@@ -139,10 +147,9 @@ void Draw() {
             Vector3 direct = CanvasToViewport(canvP);
             
             COLORREF clr = TraceRay(mainScn.cmrPos, direct, 1, FLT_MAX);
-            PutPixel(x, y, clr);
+            PutPixel(x, y, clr); 
         }
     }
-
 }
 
 
