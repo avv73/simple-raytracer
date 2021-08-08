@@ -11,7 +11,7 @@ const int WINDOW_WIDTH = 600;
 // Custom configuration of the scene to render.
 
 void ConfigureScene() {
-    mainScn.bgClr = RGB(255, 255, 255);
+    mainScn.bgClr = RT_RGB(255, 255, 255);
 
     mainScn.cmrPos.x = 0;
     mainScn.cmrPos.y = 0;
@@ -23,18 +23,36 @@ void ConfigureScene() {
     Vector3 sp1Cnt = { 0, -1, 3 };
     Vector3 sp2Cnt = { 2, 0, 4 };
     Vector3 sp3Cnt = { -2, 0, 4 };
+    Vector3 sp4Cnt = { 0, -5001, 0 };
 
     Sphere sp1 = { sp1Cnt, 1, RT_RGB(255, 0, 0) };
     Sphere sp2 = { sp2Cnt, 1, RT_RGB(0, 0, 255) };
     Sphere sp3 = { sp3Cnt, 1, RT_RGB(0, 255, 0) };
+    Sphere sp4 = { sp4Cnt, 5000, RT_RGB(255,255,0) };
     
-    Sphere* spheres = (Sphere*)malloc(sizeof(Sphere) * 3);
+    Sphere* spheres = (Sphere*)malloc(sizeof(Sphere) * 4);
     spheres[0] = sp1;
     spheres[1] = sp2;
     spheres[2] = sp3;
+    spheres[3] = sp4;
 
     mainScn.objs = spheres;
-    mainScn.objCount = 3;
+    mainScn.objCount = 4;
+
+    Vector3 l2P = { 2,1,0 };
+    Vector3 l3P = { 1,4,4 };
+
+    Light l1 = { AMBIENT, 0.2 };
+    Light l2 = { POINTED, 0.6, l2P };
+    Light l3 = { DIRECTIONAL, 0.2, l3P };
+
+    Light* lights = (Light*)malloc(sizeof(Light) * 3);
+    lights[0] = l1;
+    lights[1] = l2;
+    lights[2] = l3;
+
+    mainScn.lights = lights;
+    mainScn.lightCount = 3;
 }
 
 LRESULT CALLBACK WinProc(HWND hwnd, UINT wm, WPARAM wp, LPARAM lp);

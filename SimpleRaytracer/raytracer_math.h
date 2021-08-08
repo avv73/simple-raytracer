@@ -1,5 +1,11 @@
 #pragma once
 
+typedef enum {
+	AMBIENT,
+	POINTED,
+	DIRECTIONAL
+} LightType;
+
 typedef struct {
 	float x;
 	float y;
@@ -19,4 +25,10 @@ typedef struct {
 
 float DotProduct(Vector3 v1, Vector3 v2);
 
+Vector3 AddVector(Vector3 v1, Vector3 v2);
+
 Vector3 SubtractVector(Vector3 v1, Vector3 v2);
+
+Vector3 ScaleVector(Vector3 v, float k);
+
+float LengthVector(Vector3 v);
