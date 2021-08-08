@@ -22,9 +22,8 @@ void StartRaytracer(HWND wndHandle, int wWidth, int wHeight) {
 
 	if (!frmBuffer) {
 		frmBuffer = (COLORREF*)calloc(RT_WINDOW_HEIGHT * RT_WINDOW_WIDTH, sizeof(COLORREF));
+		Draw();
 	}
-
-	Draw();
 
 	Update(wndHandle);
 }
