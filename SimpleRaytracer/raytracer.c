@@ -72,12 +72,12 @@ Vector3 CanvasToViewport(Vector2 p2d) {
 	return res;
 }
 
-// Computes lighting of a single point using the normal vector of the object in scene and the point itself.
+// Computes lighting of a single point using the normal vector of the object in scene, the point itself, vector from point to camera & specular reflection of surface
 // Returns float in range [0,1] representing the intensity of the light.
 
-float ComputeLighting(Vector3 p, Vector3 n) {
+float ComputeLighting(Vector3 p, Vector3 n, Vector3 v, float s) {
 	float res = 0.0f;
-	Vector3 direct;
+	Vector3 directL;
 
 	for (int i = 0; i < mainScn.lightCount; i++) {
 		if (mainScn.lights[i].type == AMBIENT) {
@@ -86,15 +86,27 @@ float ComputeLighting(Vector3 p, Vector3 n) {
 		}
 		
 		if (mainScn.lights[i].type == POINTED) {
-			direct = SubtractVector(mainScn.lights[i].pos, p);
+			directL = SubtractVector(mainScn.lights[i].pos, p);
 		}
 		else {
-			direct = mainScn.lights[i].pos;
+			directL = mainScn.lights[i].pos;
 		}
 
-		float n_dot_l = DotProduct(n, direct);
+		// diffuse 
+
+		float n_dot_l = DotProduct(n, directL);
 		if (n_dot_l > 0) {
-			res += mainScn.lights[i].ins * n_dot_l / (LengthVector(n) * LengthVector(direct));
+			res += mainScn.lights[i].ins * n_dot_l / (LengthVector(n) * LengthVector(directL));
+		}
+
+		// specular
+
+		if (s != -1) {
+			Vector3 refl = SubtractVector(ScaleVector(n, 2 * DotProduct(n, directL)), directL);
+			float refl_dot_v = DotProduct(refl, v);
+			if (refl_dot_v > 0) {
+				res += mainScn.lights[i].ins * pow(refl_dot_v / (LengthVector(refl) * LengthVector(v)), s);
+			}
 		}
 	}
 
@@ -158,13 +170,17 @@ COLORREF TraceRay(Vector3 orig, Vector3 direct, float minT, float maxT) {
 	Vector3 sphN = SubtractVector(interP, closeSph->cnt);          // compute sphere normal
 	sphN = ScaleVector(sphN, (1 / LengthVector(sphN)));
 
-	// multiply light intensity with sphere's color
+	// channel-wise multiply light intensity with sphere's color & clamp in rgb range [0-255]
 
-	float factor = ComputeLighting(interP, sphN);
+	float factor = ComputeLighting(interP, sphN, ScaleVector(direct, -1), closeSph->specFactor);
 
 	int csR = RT_GetRValue(closeSph->clr) * factor;
 	int csG = RT_GetGValue(closeSph->clr) * factor;
 	int csB = RT_GetBValue(closeSph->clr) * factor;
+
+	csR = Clamp(0, 255, csR);
+	csG = Clamp(0, 255, csG);
+	csB = Clamp(0, 255, csB);
 
 	return RT_RGB(csR, csG, csB);
 }

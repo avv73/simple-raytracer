@@ -19,6 +19,17 @@ float LengthVector(Vector3 v) {
 	return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
+float Clamp(float min, float max, float x) {
+	if (min <= x && x <= max) {
+		return x;
+	}
+	else if (x < min) {
+		return min;
+	}
+
+	return max;
+}
+
 Vector3 ScaleVector(Vector3 v, float k) {
 	Vector3 result = { v.x * k, v.y * k, v.z * k };
 	return result;

@@ -8,10 +8,14 @@
 #define RT_GetBValue(a) (GetRValue(a)) 
 
 void StartRaytracer(HWND wndHandle, int wWidth, int wHeight);
+/*
+specular factor is -1 for matte spheres
+*/
 
 typedef struct {
 	Vector3 cnt;
 	float radius;
+	float specFactor;
 	COLORREF clr;
 }Sphere;
 
@@ -35,7 +39,6 @@ typedef struct {
 	int objCount;
 	int lightCount;
 }Scene;
-
 
 
 Scene mainScn;
