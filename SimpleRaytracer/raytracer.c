@@ -4,6 +4,12 @@
 #include <math.h>
 
 #define FLT_MAX          3.402823466e+38F        // max value of float
+#define EPSILON			 0.001					 // very small delta from 0 
+
+typedef struct {
+	float t;
+	Sphere* sph;
+} STTupel;
 
 int RT_WINDOW_WIDTH;
 int RT_WINDOW_HEIGHT;
@@ -13,6 +19,9 @@ COLORREF* frmBuffer = NULL;
 void Draw();
 
 void Update(HWND wndHandle);
+
+STTupel ClosestIntersection(Vector3 orig, Vector3 direct, float minT, float maxT);
+
 
 // Initializes the raytracer and renders the scene provided.
 
@@ -77,6 +86,8 @@ Vector3 CanvasToViewport(Vector2 p2d) {
 
 float ComputeLighting(Vector3 p, Vector3 n, Vector3 v, float s) {
 	float res = 0.0f;
+	float tMax = 1; // maximum allowed parameter for the shadow computation, inf for directional lights, 1 for point lights
+
 	Vector3 directL;
 
 	for (int i = 0; i < mainScn.lightCount; i++) {
@@ -90,6 +101,14 @@ float ComputeLighting(Vector3 p, Vector3 n, Vector3 v, float s) {
 		}
 		else {
 			directL = mainScn.lights[i].pos;
+			tMax = FLT_MAX;
+		}
+
+		// shadowing
+
+		STTupel shadow = ClosestIntersection(p, directL, EPSILON, tMax);
+		if (shadow.sph != NULL) {
+			continue;
 		}
 
 		// diffuse 
@@ -138,9 +157,9 @@ TTupel IntersectRaySphere(Vector3 orig, Vector3 direct, Sphere sph) {
 	return result;
 }
 
-// Traces a ray (origin and direction) with all spheres in the scene. Returns the color of the struck sphere (if any).
+// Finds the closest sphere in respect to an origin point and direction vector; returns a tuple with the closest sphere and the computed parameter for the ray equation.
 
-COLORREF TraceRay(Vector3 orig, Vector3 direct, float minT, float maxT) {
+STTupel ClosestIntersection(Vector3 orig, Vector3 direct, float minT, float maxT) {
 	float closeT = FLT_MAX;
 	Sphere* closeSph = NULL;
 
@@ -162,21 +181,30 @@ COLORREF TraceRay(Vector3 orig, Vector3 direct, float minT, float maxT) {
 		}
 	}
 
-	if (closeSph == NULL) {
+	STTupel result = { closeT, closeSph };
+	return result;
+}
+
+// Traces a ray (origin and direction) with all spheres in the scene. Returns the color of the struck sphere (if any).
+
+COLORREF TraceRay(Vector3 orig, Vector3 direct, float minT, float maxT) {
+	STTupel intersect = ClosestIntersection(orig, direct, minT, maxT);
+
+	if (intersect.sph == NULL) {
 		return mainScn.bgClr;
 	}
 
-	Vector3 interP = AddVector(orig, ScaleVector(direct, closeT)); // compute the intersection point by substituting the found parameter in the point equation
-	Vector3 sphN = SubtractVector(interP, closeSph->cnt);          // compute sphere normal
+	Vector3 interP = AddVector(orig, ScaleVector(direct, intersect.t)); // compute the intersection point by substituting the found parameter in the point equation
+	Vector3 sphN = SubtractVector(interP, intersect.sph->cnt);          // compute sphere normal
 	sphN = ScaleVector(sphN, (1 / LengthVector(sphN)));
 
 	// channel-wise multiply light intensity with sphere's color & clamp in rgb range [0-255]
 
-	float factor = ComputeLighting(interP, sphN, ScaleVector(direct, -1), closeSph->specFactor);
+	float factor = ComputeLighting(interP, sphN, ScaleVector(direct, -1), intersect.sph->specFactor);
 
-	int csR = RT_GetRValue(closeSph->clr) * factor;
-	int csG = RT_GetGValue(closeSph->clr) * factor;
-	int csB = RT_GetBValue(closeSph->clr) * factor;
+	int csR = RT_GetRValue(intersect.sph->clr) * factor;
+	int csG = RT_GetGValue(intersect.sph->clr) * factor;
+	int csB = RT_GetBValue(intersect.sph->clr) * factor;
 
 	csR = Clamp(0, 255, csR);
 	csG = Clamp(0, 255, csG);
