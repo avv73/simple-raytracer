@@ -1,5 +1,6 @@
 # Simple Raytracer
-![example render](tracer_example.png)
+<p align="center"><img src="tracer_example.png" width="400" height="400"></p>
+
 A simple raytracer in C, using only the Win32 API. Implements the pseudo-raytracer as illustrated in the first chapter of [Computer Graphics from Scratch](https://www.gabrielgambetta.com/computer-graphics-from-scratch/).
 
 ## Functionality
