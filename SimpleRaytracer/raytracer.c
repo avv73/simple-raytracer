@@ -4,7 +4,7 @@
 #include <math.h>
 
 #define FLT_MAX          3.402823466e+38F        // max value of float
-#define EPSILON			 0.001					 // very small delta from 0 
+#define EPSILON			 0.1					 // very small delta from 0, good precision is needed here; if epsilion is too small it will cause bright spots in the big sphere
 
 typedef struct {
 	float t;
@@ -13,6 +13,8 @@ typedef struct {
 
 int RT_WINDOW_WIDTH;
 int RT_WINDOW_HEIGHT;
+
+const int RT_DEPTH = 1; // recursion depth of the raytracer
 
 COLORREF* frmBuffer = NULL;
 
@@ -95,7 +97,7 @@ float ComputeLighting(Vector3 p, Vector3 n, Vector3 v, float s) {
 			res += mainScn.lights[i].ins;
 			continue;
 		}
-		
+
 		if (mainScn.lights[i].type == POINTED) {
 			directL = SubtractVector(mainScn.lights[i].pos, p);
 		}
@@ -107,7 +109,7 @@ float ComputeLighting(Vector3 p, Vector3 n, Vector3 v, float s) {
 		// shadowing
 
 		STTupel shadow = ClosestIntersection(p, directL, EPSILON, tMax);
-		if (shadow.sph != NULL) {
+		if (shadow.sph) {
 			continue;
 		}
 
@@ -121,12 +123,20 @@ float ComputeLighting(Vector3 p, Vector3 n, Vector3 v, float s) {
 		// specular
 
 		if (s != -1) {
-			Vector3 refl = SubtractVector(ScaleVector(n, 2 * DotProduct(n, directL)), directL);
+			Vector3 refl = ReflectVector(directL, n);
 			float refl_dot_v = DotProduct(refl, v);
 			if (refl_dot_v > 0) {
 				res += mainScn.lights[i].ins * pow(refl_dot_v / (LengthVector(refl) * LengthVector(v)), s);
 			}
 		}
+	}
+
+	if (res > 1) {
+		res = 1;
+	}
+
+	if (res < 0) {
+		res = 0;
 	}
 
 	return res;
@@ -187,10 +197,10 @@ STTupel ClosestIntersection(Vector3 orig, Vector3 direct, float minT, float maxT
 
 // Traces a ray (origin and direction) with all spheres in the scene. Returns the color of the struck sphere (if any).
 
-COLORREF TraceRay(Vector3 orig, Vector3 direct, float minT, float maxT) {
+COLORREF TraceRay(Vector3 orig, Vector3 direct, float minT, float maxT, int depth) {
 	STTupel intersect = ClosestIntersection(orig, direct, minT, maxT);
 
-	if (intersect.sph == NULL) {
+	if (!intersect.sph) {
 		return mainScn.bgClr;
 	}
 
@@ -199,18 +209,42 @@ COLORREF TraceRay(Vector3 orig, Vector3 direct, float minT, float maxT) {
 	sphN = ScaleVector(sphN, (1 / LengthVector(sphN)));
 
 	// channel-wise multiply light intensity with sphere's color & clamp in rgb range [0-255]
+	Vector3 directIn = ScaleVector(direct, -1);
 
-	float factor = ComputeLighting(interP, sphN, ScaleVector(direct, -1), intersect.sph->specFactor);
+	float factor = ComputeLighting(interP, sphN, directIn, intersect.sph->specFactor);
 
 	int csR = RT_GetRValue(intersect.sph->clr) * factor;
 	int csG = RT_GetGValue(intersect.sph->clr) * factor;
 	int csB = RT_GetBValue(intersect.sph->clr) * factor;
 
-	csR = Clamp(0, 255, csR);
-	csG = Clamp(0, 255, csG);
-	csB = Clamp(0, 255, csB);
+	/*csR = ClampRGB(csR);
+	csG = ClampRGB(csG);
+	csB = ClampRGB(csB);*/
 
-	return RT_RGB(csR, csG, csB);
+	if (depth <= 0 || intersect.sph->refl <= 0) {
+		return RT_RGB(csR, csG, csB);
+	}
+
+	// compute reflected color
+	Vector3 refl = ReflectVector(directIn, sphN);
+
+	COLORREF reflClr = TraceRay(interP, refl, EPSILON, FLT_MAX, depth - 1);
+
+	int rfR = RT_GetRValue(reflClr) * intersect.sph->refl;
+	int rfG = RT_GetGValue(reflClr) * intersect.sph->refl;
+	int rfB = RT_GetBValue(reflClr) * intersect.sph->refl;
+
+	/*rfR = ClampRGB(rfR);
+	rfG = ClampRGB(rfG);
+	rfB = ClampRGB(rfB);*/
+
+	csR *= (1 - intersect.sph->refl);
+	csG *= (1 - intersect.sph->refl);
+	csB *= (1 - intersect.sph->refl);
+
+	COLORREF finClr = RT_RGB(csR + rfR, csG + rfG, csB + rfB);
+
+	return finClr;
 }
 
 // Clears the screen with background color.
@@ -231,8 +265,13 @@ void Draw() {
 			Vector2 canvP = { x, y };
 			Vector3 direct = CanvasToViewport(canvP);
 
-			COLORREF clr = TraceRay(mainScn.cmrPos, direct, 1, FLT_MAX);
-			PutPixel(x, y, clr);
+			COLORREF clr = TraceRay(mainScn.cmrPos, direct, 1, FLT_MAX, RT_DEPTH);
+
+			int clrR = ClampRGB(RT_GetRValue(clr));
+			int clrG = ClampRGB(RT_GetGValue(clr));
+			int clrB = ClampRGB(RT_GetBValue(clr));
+
+			PutPixel(x, y, RT_RGB(clrR, clrG, clrB));
 		}
 	}
 }

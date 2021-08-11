@@ -2,7 +2,7 @@
 #define _UNICODE
 #include <windows.h>
 #include "raytracer.h"
-#include <tchar.h>
+#include <stdio.h>
 
 const int WINDOW_HEIGHT = 600;
 const int WINDOW_WIDTH = 600;
@@ -13,7 +13,8 @@ int isMinimized = 0;
 // Custom configuration of the scene to render.
 
 void ConfigureScene() {
-    mainScn.bgClr = RT_RGB(255, 255, 255);
+    //mainScn.bgClr = RT_RGB(255, 255, 255);
+    mainScn.bgClr = RT_RGB(0, 0, 0);
 
     mainScn.cmrPos.x = 0;
     mainScn.cmrPos.y = 0;
@@ -27,10 +28,10 @@ void ConfigureScene() {
     Vector3 sp3Cnt = { -2, 0, 4 };
     Vector3 sp4Cnt = { 0, -5001, 0 };
 
-    Sphere sp1 = { sp1Cnt, 1, 500, RT_RGB(255, 0, 0) };
-    Sphere sp2 = { sp2Cnt, 1, 500, RT_RGB(0, 0, 255) };
-    Sphere sp3 = { sp3Cnt, 1, 10, RT_RGB(0, 255, 0) };
-    Sphere sp4 = { sp4Cnt, 5000, 1000, RT_RGB(255,255,0) };
+    Sphere sp1 = { sp1Cnt, 1, 500, 0.2, RT_RGB(255, 0, 0) };
+    Sphere sp2 = { sp2Cnt, 1, 500, 0.3, RT_RGB(0, 0, 255) };
+    Sphere sp3 = { sp3Cnt, 1, 10, 0.4, RT_RGB(0, 255, 0) };
+    Sphere sp4 = { sp4Cnt, 5000, 1000, 0.5, RT_RGB(255,255,0) };
     
     Sphere* spheres = (Sphere*)malloc(sizeof(Sphere) * 4);
     spheres[0] = sp1;
@@ -163,6 +164,21 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT wm, WPARAM wp, LPARAM lp)
             StartRaytracer(hwnd, WINDOW_WIDTH, WINDOW_HEIGHT);
             isMinimized = 0;
         }
+        break;
+    case WM_RBUTTONDOWN:
+        // print mouse position on left click
+
+        xPos = (int)(short)LOWORD(lp);
+        yPos = (int)(short)HIWORD(lp);
+
+        xPos =  xPos - WINDOW_WIDTH / 2;
+        yPos = -yPos + WINDOW_HEIGHT / 2 - 1;
+
+        char msg[100];
+        sprintf_s(msg, 100, "X: %d Y: %d\n", xPos, yPos);
+
+        OutputDebugStringA(msg);
+
         break;
     }
     return DefWindowProc(hwnd, wm, wp, lp);

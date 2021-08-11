@@ -19,18 +19,22 @@ float LengthVector(Vector3 v) {
 	return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
-float Clamp(float min, float max, float x) {
-	if (min <= x && x <= max) {
+float ClampRGB(float x) {
+	if (0 <= x && x <= 255) {
 		return x;
 	}
-	else if (x < min) {
-		return min;
+	else if (x < 0) {
+		return 0;
 	}
 
-	return max;
+	return 255;
 }
 
 Vector3 ScaleVector(Vector3 v, float k) {
 	Vector3 result = { v.x * k, v.y * k, v.z * k };
 	return result;
+}
+
+Vector3 ReflectVector(Vector3 v, Vector3 n) {
+	return SubtractVector(ScaleVector(n, 2 * DotProduct(n, v)), v);
 }

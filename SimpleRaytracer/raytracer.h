@@ -16,6 +16,7 @@ typedef struct {
 	Vector3 cnt;
 	float radius;
 	float specFactor;
+	float refl;
 	COLORREF clr;
 }Sphere;
 
