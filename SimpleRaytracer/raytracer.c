@@ -217,10 +217,6 @@ COLORREF TraceRay(Vector3 orig, Vector3 direct, float minT, float maxT, int dept
 	int csG = RT_GetGValue(intersect.sph->clr) * factor;
 	int csB = RT_GetBValue(intersect.sph->clr) * factor;
 
-	/*csR = ClampRGB(csR);
-	csG = ClampRGB(csG);
-	csB = ClampRGB(csB);*/
-
 	if (depth <= 0 || intersect.sph->refl <= 0) {
 		return RT_RGB(csR, csG, csB);
 	}
@@ -233,10 +229,6 @@ COLORREF TraceRay(Vector3 orig, Vector3 direct, float minT, float maxT, int dept
 	int rfR = RT_GetRValue(reflClr) * intersect.sph->refl;
 	int rfG = RT_GetGValue(reflClr) * intersect.sph->refl;
 	int rfB = RT_GetBValue(reflClr) * intersect.sph->refl;
-
-	/*rfR = ClampRGB(rfR);
-	rfG = ClampRGB(rfG);
-	rfB = ClampRGB(rfB);*/
 
 	csR *= (1 - intersect.sph->refl);
 	csG *= (1 - intersect.sph->refl);
