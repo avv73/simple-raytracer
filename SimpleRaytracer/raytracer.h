@@ -34,6 +34,7 @@ typedef struct {
 	float vwpSize;
 	float prjPlaneZ;
 	Vector3 cmrPos;
+	float** rotMatrix;
 	COLORREF bgClr;
 	Sphere* objs;
 	Light* lights;

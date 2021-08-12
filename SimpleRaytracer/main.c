@@ -20,6 +20,9 @@ void ConfigureScene() {
     mainScn.cmrPos.y = 0;
     mainScn.cmrPos.z = 0;
 
+    //mainScn.rotMatrix = ComposeRotation(RotateZ(40), RotateX(30));
+    mainScn.rotMatrix = RotateX(0);
+
     mainScn.vwpSize = 1;
     mainScn.prjPlaneZ = 1;
 

@@ -257,6 +257,8 @@ void Draw() {
 			Vector2 canvP = { x, y };
 			Vector3 direct = CanvasToViewport(canvP);
 
+			direct = MultiplyVectorMatrix(direct, mainScn.rotMatrix);
+
 			COLORREF clr = TraceRay(mainScn.cmrPos, direct, 1, FLT_MAX, RT_DEPTH);
 
 			int clrR = ClampRGB(RT_GetRValue(clr));
