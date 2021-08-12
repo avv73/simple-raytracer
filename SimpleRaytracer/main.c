@@ -4,6 +4,9 @@
 #include "raytracer.h"
 #include <stdio.h>
 
+
+// Configurables.
+
 const int WINDOW_HEIGHT = 600;
 const int WINDOW_WIDTH = 600;
 
@@ -63,7 +66,7 @@ void ConfigureScene() {
 
 LRESULT CALLBACK WinProc(HWND hwnd, UINT wm, WPARAM wp, LPARAM lp);
 
-const TCHAR CLSNAME[] = TEXT("rayTracerClass");
+const TCHAR CLSNAME[] = TEXT("Simple Raytracer");
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR cmdline, int cmdshow)
 {
@@ -92,7 +95,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR cmdline, int cmds
 
     hwnd = CreateWindowEx(WS_EX_LEFT,
         CLSNAME,
-        NULL,
+        CLSNAME,
         WS_MINIMIZEBOX | WS_SYSMENU, // WS_OVERLAPPEDWINDOW
         0,
         0,
@@ -112,11 +115,13 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR cmdline, int cmds
     UpdateWindow(hwnd);
 
     ConfigureScene();
+
     StartRaytracer(hwnd, WINDOW_WIDTH, WINDOW_HEIGHT);
     while (GetMessage(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+
     return msg.wParam;
 }
 

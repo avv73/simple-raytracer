@@ -1,7 +1,11 @@
+#define UNICODE
+#define _UNICODE
+
 #include "raytracer.h"
 
 #include <windows.h>
 #include <math.h>
+#include <time.h>
 
 #define FLT_MAX          3.402823466e+38F        // max value of float
 #define EPSILON			 0.1					 // very small delta from 0, good precision is needed here; if epsilion is too small it will cause bright spots in the big sphere
@@ -14,7 +18,12 @@ typedef struct {
 int RT_WINDOW_WIDTH;
 int RT_WINDOW_HEIGHT;
 
-const int RT_DEPTH = 1; // recursion depth of the raytracer
+
+// Show elapsed time on loading
+const int SHOW_ELAPSED = 1;
+clock_t startTime;
+
+const int RT_DEPTH = 3; // recursion depth of the raytracer
 
 COLORREF* frmBuffer = NULL;
 
@@ -31,9 +40,21 @@ void StartRaytracer(HWND wndHandle, int wWidth, int wHeight) {
 	RT_WINDOW_WIDTH = wWidth;
 	RT_WINDOW_HEIGHT = wHeight;
 
+	startTime = clock();
+
 	if (!frmBuffer) {
 		frmBuffer = (COLORREF*)calloc(RT_WINDOW_HEIGHT * RT_WINDOW_WIDTH, sizeof(COLORREF));
 		Draw();
+
+		if (SHOW_ELAPSED) {
+			clock_t elapsed = clock() - startTime;
+
+			char txt[100];
+			sprintf_s(txt, 100, "Total elapsed time: %d\n", elapsed);
+
+			//char tit[100] = "Message";
+			OutputDebugStringA(txt);
+		}
 	}
 
 	Update(wndHandle);
