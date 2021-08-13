@@ -13,6 +13,7 @@
 typedef struct {
 	float t;
 	Sphere* sph;
+	Triangle* tr;
 } STTupel;
 
 typedef struct {
@@ -31,7 +32,7 @@ clock_t startTime;
 // Reflection depth of the raytracer, 0 for disabled
 const int RT_DEPTH = 3;
 
-// Subsampling factor, 0 or 1 for disabled
+// Subsampling factor, 0 for disabled
 const int SUBSAMPLE_FACTOR = 0;
 
 COLORREF* frmBuffer = NULL;
@@ -175,6 +176,71 @@ float ComputeLighting(Vector3 p, Vector3 n, Vector3 v, float s) {
 	return res;
 }
 
+// Intersects a ray (origin and direction) with a triangle. Returns a tuple with the quadratic solution parameter of the intersection.
+
+TTupel IntersectRayTriangle(Vector3 orig, Vector3 direct, Triangle tr) {
+	TTupel result;
+	result.isValid = 1;
+
+	Vector3 ab = SubtractVector(tr.b, tr.a);
+	Vector3 ac = SubtractVector(tr.c, tr.a);
+
+	Vector3 n = CrossProduct(ab, ac);
+	n = ScaleVector(n, (1 / LengthVector(n)));
+
+	float area = LengthVector(n);
+
+	float n_dot_direct = DotProduct(direct, n);
+	if (fabs(n_dot_direct) < EPSILON) { // 0.01?
+		result.isValid = 0;
+		return;
+	}
+
+	float d = DotProduct(n, tr.a); // arbitrary point can be chosen
+
+	float t = (DotProduct(n, orig) + d) / n_dot_direct; 
+
+	if (t < 0) {
+		result.isValid = 0;
+		return;
+	}
+
+	Vector3 interP = AddVector(orig, ScaleVector(direct, t));
+
+	// inside-outside test
+
+	Vector3 c;
+
+	Vector3 e0 = SubtractVector(tr.b, tr.a);
+	Vector3 p0 = SubtractVector(interP, tr.a);
+	c = CrossProduct(e0, p0);
+
+	if (DotProduct(n, c) < 0) {
+		result.isValid = 0;
+		return;
+	}
+
+	Vector3 e1 = SubtractVector(tr.c, tr.b);
+	Vector3 p1 = SubtractVector(interP, tr.b);
+	c = CrossProduct(e1, p1);
+
+	if (DotProduct(n, c) < 0) {
+		result.isValid = 0;
+		return;
+	}
+
+	Vector3 e2 = SubtractVector(tr.a, tr.c);
+	Vector3 p2 = SubtractVector(interP, tr.c);
+	c = CrossProduct(e2, p2);
+
+	if (DotProduct(n, c) < 0) {
+		result.isValid = 0;
+		return;
+	}
+
+	result.t1 = t;
+	return result;
+}
 
 // Intersects a ray (origin and direction) with a sphere. Returns a tuple with the quadratic solution parameters of the intersection.
 
@@ -200,14 +266,15 @@ TTupel IntersectRaySphere(Vector3 orig, Vector3 direct, Sphere sph) {
 	return result;
 }
 
-// Finds the closest sphere in respect to an origin point and direction vector; returns a tuple with the closest sphere and the computed parameter for the ray equation.
+// Finds the closest sphere or triangle in respect to an origin point and direction vector; returns a tuple with the closest sphere (triangle) and the computed parameter for the ray equation.
 
 STTupel ClosestIntersection(Vector3 orig, Vector3 direct, float minT, float maxT) {
 	float closeT = FLT_MAX;
 	Sphere* closeSph = NULL;
+	Triangle* closeTr = NULL;
 
-	for (int i = 0; i < mainScn.objCount; i++) {
-		TTupel ts = IntersectRaySphere(orig, direct, mainScn.objs[i]);
+	for (int i = 0; i < mainScn.sphCount; i++) {
+		TTupel ts = IntersectRaySphere(orig, direct, mainScn.sphs[i]);
 
 		if (!ts.isValid) {
 			continue;
@@ -215,57 +282,89 @@ STTupel ClosestIntersection(Vector3 orig, Vector3 direct, float minT, float maxT
 
 		if (ts.t1 < closeT && minT < ts.t1 && ts.t1 < maxT) {
 			closeT = ts.t1;
-			closeSph = &mainScn.objs[i];
+			closeSph = &mainScn.sphs[i];
 		}
 
 		if (ts.t2 < closeT && minT < ts.t2 && ts.t2 < maxT) {
 			closeT = ts.t2;
-			closeSph = &mainScn.objs[i];
+			closeSph = &mainScn.sphs[i];
 		}
 	}
 
-	STTupel result = { closeT, closeSph };
+	for (int i = 0; i < mainScn.trCount; i++) {
+		TTupel ts = IntersectRayTriangle(orig, direct, mainScn.trs[i]);
+
+		if (!ts.isValid) {
+			continue;
+		}
+
+		if (ts.t1 < closeT && minT < ts.t1 && ts.t1 < maxT) {
+			closeT = ts.t1;
+			closeSph = NULL;
+			closeTr = &mainScn.trs[i];
+		}
+	}
+
+	STTupel result = { closeT, closeSph, closeTr };
 	return result;
 }
 
-// Traces a ray (origin and direction) with all spheres in the scene. Returns the color of the struck sphere (if any).
+// Traces a ray (origin and direction) with all spheres & triangles in the scene. Returns the color of the struck object (if any).
 
 COLORREF TraceRay(Vector3 orig, Vector3 direct, float minT, float maxT, int depth) {
 	STTupel intersect = ClosestIntersection(orig, direct, minT, maxT);
 
-	if (!intersect.sph) {
+	if (!intersect.sph && !intersect.tr) {
 		return mainScn.bgClr;
 	}
 
 	Vector3 interP = AddVector(orig, ScaleVector(direct, intersect.t)); // compute the intersection point by substituting the found parameter in the point equation
-	Vector3 sphN = SubtractVector(interP, intersect.sph->cnt);          // compute sphere normal
-	sphN = ScaleVector(sphN, (1 / LengthVector(sphN)));
+	Vector3 normal; 
+	float objSpecFactor;
+	COLORREF objClr;
+	float objRefl;
 
-	// channel-wise multiply light intensity with sphere's color & clamp in rgb range [0-255]
+	if (intersect.sph) {
+		normal = SubtractVector(interP, intersect.sph->cnt);          // compute sphere normal
+	}
+	else {
+		Vector3 ab = SubtractVector(intersect.tr->b, intersect.tr->a);
+		Vector3 ac = SubtractVector(intersect.tr->c, intersect.tr->a);
+
+		normal = CrossProduct(ab, ac);
+	}
+
+	normal = ScaleVector(normal, (1 / LengthVector(normal)));
+
+	// channel-wise multiply light intensity with object's color & clamp in rgb range [0-255]
 	Vector3 directIn = ScaleVector(direct, -1);
 
-	float factor = ComputeLighting(interP, sphN, directIn, intersect.sph->specFactor);
+	objSpecFactor = intersect.sph ? intersect.sph->specFactor : intersect.tr->specFactor;
+	objClr = intersect.sph ? intersect.sph->clr : intersect.tr->clr;
+	objRefl = intersect.sph ? intersect.sph->refl : intersect.tr->refl;
 
-	int csR = RT_GetRValue(intersect.sph->clr) * factor;
-	int csG = RT_GetGValue(intersect.sph->clr) * factor;
-	int csB = RT_GetBValue(intersect.sph->clr) * factor;
+	float factor = ComputeLighting(interP, normal, directIn, objSpecFactor);
 
-	if (depth <= 0 || intersect.sph->refl <= 0) {
+	int csR = RT_GetRValue(objClr) * factor;
+	int csG = RT_GetGValue(objClr) * factor;
+	int csB = RT_GetBValue(objClr) * factor;
+
+	if (depth <= 0 || objRefl <= 0) {
 		return RT_RGB(csR, csG, csB);
 	}
 
 	// compute reflected color
-	Vector3 refl = ReflectVector(directIn, sphN);
+	Vector3 refl = ReflectVector(directIn, normal);
 
 	COLORREF reflClr = TraceRay(interP, refl, EPSILON, FLT_MAX, depth - 1);
 
-	int rfR = RT_GetRValue(reflClr) * intersect.sph->refl;
-	int rfG = RT_GetGValue(reflClr) * intersect.sph->refl;
-	int rfB = RT_GetBValue(reflClr) * intersect.sph->refl;
+	int rfR = RT_GetRValue(reflClr) * objRefl;
+	int rfG = RT_GetGValue(reflClr) * objRefl;
+	int rfB = RT_GetBValue(reflClr) * objRefl;
 
-	csR *= (1 - intersect.sph->refl);
-	csG *= (1 - intersect.sph->refl);
-	csB *= (1 - intersect.sph->refl);
+	csR *= (1 - objRefl);
+	csG *= (1 - objRefl);
+	csB *= (1 - objRefl);
 
 	COLORREF finClr = RT_RGB(csR + rfR, csG + rfG, csB + rfB);
 

@@ -9,7 +9,7 @@
 
 void StartRaytracer(HWND wndHandle, int wWidth, int wHeight);
 /*
-specular factor is -1 for matte spheres
+	specular factor is -1 for matte spheres
 */
 
 typedef struct {
@@ -20,9 +20,18 @@ typedef struct {
 	COLORREF clr;
 }Sphere;
 
+typedef struct {
+	Vector3 a;
+	Vector3 b;
+	Vector3 c;
+	float specFactor;
+	float refl;
+	COLORREF clr;
+} Triangle;
+
 /*
-when ambient - pos has no meaning and can be ignored;
-when directional - pos is the directional vector of the light;
+	when ambient - pos has no meaning and can be ignored;
+	when directional - pos is the directional vector of the light;
 */
 typedef struct {
 	LightType type;
@@ -36,9 +45,11 @@ typedef struct {
 	Vector3 cmrPos;
 	float** rotMatrix;
 	COLORREF bgClr;
-	Sphere* objs;
+	Sphere* sphs;
+	Triangle* trs;
 	Light* lights;
-	int objCount;
+	int sphCount;
+	int trCount;
 	int lightCount;
 }Scene;
 

@@ -42,6 +42,11 @@ Vector3 ReflectVector(Vector3 v, Vector3 n) {
 	return SubtractVector(ScaleVector(n, 2 * DotProduct(n, v)), v);
 }
 
+Vector3 CrossProduct(Vector3 v1, Vector3 v2) {
+	Vector3 res = { v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x };
+	return res;
+}
+
 float** RotateX(float teta) {
 	teta = teta * PI / 180;
 
