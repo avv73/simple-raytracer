@@ -3,9 +3,10 @@
 #include <windows.h>
 #include "raytracer.h"
 #include <stdio.h>
+#include <strsafe.h>
 
 
-// Configurables.
+// Window height properties.
 
 const int WINDOW_HEIGHT = 600;
 const int WINDOW_WIDTH = 600;
@@ -16,7 +17,6 @@ int isMinimized = 0;
 // Custom configuration of the scene to render.
 
 void ConfigureScene() {
-    //mainScn.bgClr = RT_RGB(255, 255, 255);
     mainScn.bgClr = RT_RGB(0, 0, 0);
 
     mainScn.cmrPos.x = 0;
@@ -174,7 +174,7 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT wm, WPARAM wp, LPARAM lp)
         }
         break;
     case WM_RBUTTONDOWN:
-        // print mouse position on left click
+        // print mouse position on right click
 
         xPos = (int)(short)LOWORD(lp);
         yPos = (int)(short)HIWORD(lp);
@@ -182,10 +182,14 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT wm, WPARAM wp, LPARAM lp)
         xPos =  xPos - WINDOW_WIDTH / 2;
         yPos = -yPos + WINDOW_HEIGHT / 2 - 1;
 
-        char msg[100];
-        sprintf_s(msg, 100, "X: %d Y: %d\n", xPos, yPos);
+        TCHAR txt[50];
 
-        OutputDebugStringA(msg);
+        TCHAR header[] = TEXT("Information");
+        LPCSTR textPlc = TEXT("Canvas coordinates X: %d  Y: %d");
+
+        StringCbPrintf(txt, 50 * sizeof(TCHAR), textPlc, xPos, yPos);
+
+        MessageBox(NULL, txt, header, NULL);
 
         break;
     }

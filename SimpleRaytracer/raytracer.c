@@ -2,10 +2,10 @@
 #define _UNICODE
 
 #include "raytracer.h"
-
 #include <windows.h>
 #include <math.h>
 #include <time.h>
+#include <strsafe.h>
 
 #define FLT_MAX          3.402823466e+38F        // max value of float
 #define EPSILON			 0.1					 // very small delta from 0, good precision is needed here; if epsilion is too small it will cause bright spots in the big sphere
@@ -15,15 +15,24 @@ typedef struct {
 	Sphere* sph;
 } STTupel;
 
+typedef struct {
+	float t1;
+	float t2;
+	char isValid;
+} TTupel;
+
 int RT_WINDOW_WIDTH;
 int RT_WINDOW_HEIGHT;
 
-
-// Show elapsed time on loading
+// Show elapsed time when loading finishes
 const int SHOW_ELAPSED = 1;
 clock_t startTime;
 
-const int RT_DEPTH = 3; // recursion depth of the raytracer
+// Reflection depth of the raytracer, 0 for disabled
+const int RT_DEPTH = 3;
+
+// Subsampling factor, 0 or 1 for disabled
+const int SUBSAMPLE_FACTOR = 0;
 
 COLORREF* frmBuffer = NULL;
 
@@ -49,11 +58,14 @@ void StartRaytracer(HWND wndHandle, int wWidth, int wHeight) {
 		if (SHOW_ELAPSED) {
 			clock_t elapsed = clock() - startTime;
 
-			char txt[100];
-			sprintf_s(txt, 100, "Total elapsed time: %d\n", elapsed);
+			TCHAR txt[50];
 
-			//char tit[100] = "Message";
-			OutputDebugStringA(txt);
+			TCHAR header[] = TEXT("Information");
+			LPCTSTR textPlc = TEXT("Rendering time: %d ms");
+
+			StringCbPrintf(txt, 50 * sizeof(TCHAR), textPlc, elapsed);
+
+			MessageBox(NULL, txt, header, NULL);
 		}
 	}
 
@@ -81,7 +93,7 @@ void Update(HWND wndHandle) {
 		SRCCOPY);
 
 	DeleteDC(src);
-	DeleteObject(map); // for now?
+	DeleteObject(map);
 }
 
 // Puts pixel on the screen, converts from canvas coordinate system to screen coordinate system itself.
@@ -273,6 +285,10 @@ void Clear() {
 // Renders the scene.
 
 void Draw() {
+	COLORREF clr;
+	COLORREF prevClr;
+	int count = 0;
+
 	for (int x = -RT_WINDOW_WIDTH / 2; x < RT_WINDOW_WIDTH / 2; x++) {
 		for (int y = -RT_WINDOW_HEIGHT / 2; y < RT_WINDOW_HEIGHT / 2; y++) {
 			Vector2 canvP = { x, y };
@@ -280,8 +296,16 @@ void Draw() {
 
 			direct = MultiplyVectorMatrix(direct, mainScn.rotMatrix);
 
-			COLORREF clr = TraceRay(mainScn.cmrPos, direct, 1, FLT_MAX, RT_DEPTH);
-
+			if (SUBSAMPLE_FACTOR && count % SUBSAMPLE_FACTOR != 0) {
+				clr = prevClr;
+				count++;
+			}
+			else {
+				clr = TraceRay(mainScn.cmrPos, direct, 1, FLT_MAX, RT_DEPTH);
+				prevClr = clr;
+				count++;
+			}
+			
 			int clrR = ClampRGB(RT_GetRValue(clr));
 			int clrG = ClampRGB(RT_GetGValue(clr));
 			int clrB = ClampRGB(RT_GetBValue(clr));

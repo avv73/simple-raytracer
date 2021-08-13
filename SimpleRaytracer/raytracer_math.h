@@ -1,5 +1,4 @@
 #pragma once
-#include <stdarg.h>
 
 typedef enum {
 	AMBIENT,
@@ -18,12 +17,6 @@ typedef struct {
 	float y;
 } Vector2;
 
-typedef struct {
-	float t1;
-	float t2;
-	char isValid;
-} TTupel;
-
 float ClampRGB(float x);
 
 float DotProduct(Vector3 v1, Vector3 v2);
@@ -41,7 +34,7 @@ float LengthVector(Vector3 v);
 /*
 	Rotate functions return a rotation matrix around the specified axis.
 	Teta is a degree angle.
-	ComposeRotation returns the composition of matrix m1 with m2 -> m1 X m2;
+	ComposeRotation returns the composition of matrix m1 with m2 (m1 X m2);
 */
 
 
