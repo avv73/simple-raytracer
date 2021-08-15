@@ -20,11 +20,11 @@ Refer to `ConfigureScene()` in `main.c` for a sample configuration.
 Please keep in mind that I use Y-up coordinate system for the scene, and that the canvas coordinate's origin is located at the center of the screen (`PutPixel()` automatically converts from canvas to screen coordinates).
 
 ### Important constants/defines
-main.c:
+main.c
 - `const int WINDOW_HEIGHT = 600;` - defines the height of the rendering area
 - `const int WINDOW_WIDTH = 600;` - defines the width of the rendering area
 
-raytracer.c:
+raytracer.c
 
 - `const int SHOW_ELAPSED = 1;` - when rendering is completed, show elapsed time in ms.
 - `const int RT_DEPTH = 3;` - recursion depth of the raytracer for the reflection calculation
