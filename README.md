@@ -23,7 +23,9 @@ Please keep in mind that I use Y-up coordinate system for the scene, and that th
 main.c:
 - `const int WINDOW_HEIGHT = 600;` - defines the height of the rendering area
 - `const int WINDOW_WIDTH = 600;` - defines the width of the rendering area
+
 raytracer.c:
+
 - `const int SHOW_ELAPSED = 1;` - when rendering is completed, show elapsed time in ms.
 - `const int RT_DEPTH = 3;` - recursion depth of the raytracer for the reflection calculation
 - `const int SUBSAMPLE_FACTOR = 0;` - subsampling factor (factor of 2 means 4x subsampling, 3 means 8x and so on); 0 or 1 for disable
