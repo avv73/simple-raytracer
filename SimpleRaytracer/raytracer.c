@@ -374,8 +374,8 @@ COLORREF TraceRay(Vector3 orig, Vector3 direct, float minT, float maxT, int dept
 // Clears the screen with background color.
 
 void Clear() {
-	for (int x = 0; x < RT_WINDOW_WIDTH; x++) {
-		for (int y = 0; y < RT_WINDOW_HEIGHT; y++) {
+	for (int x = -RT_WINDOW_WIDTH / 2; x < RT_WINDOW_WIDTH / 2; x++) {
+		for (int y = -RT_WINDOW_HEIGHT / 2; y < RT_WINDOW_HEIGHT / 2; y++) {
 			PutPixel(x, y, mainScn.bgClr);
 		}
 	}
